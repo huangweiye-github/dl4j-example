@@ -91,7 +91,7 @@ public class MnistTest {
         logger.info(eval.stats());  // 输出评估结果，包括准确率、精确率等指标
 
         // 保存模型到文件
-        String model = "D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model\\mnist\\mnist_model.zip";
+        String model = "D:\\idea-work\\dl4j-example\\src\\test\\resources\\model\\mnist\\mnist_model.zip";
         File modelFile = new File(model);
         ModelSerializer.writeModel(trainModel, modelFile, true);
         logger.info("****************训练示例完成********************");
@@ -99,7 +99,7 @@ public class MnistTest {
         // 加载已训练的模型
         MultiLayerNetwork testModel = MultiLayerNetwork.load(new File(model), true);
         // 测试图像路径
-        String testImagePath = "D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\mnist\\";
+        String testImagePath = "D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\mnist\\";
         // 假设你有10个测试图像，命名为 0.png 到 9.png，当我从MNIST数据集网站下载9张图片后，这个大模型确实可以给我识别出来
         for (int i = 0; i < 3; i++) {
             String fileName = testImagePath + i + ".jpg";

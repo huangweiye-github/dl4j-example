@@ -46,7 +46,7 @@ public class OneHotNN {
   }
 
   public static void main(String[] args) throws Exception {
-    File charFile = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\singleCharVec.txt");
+    File charFile = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\singleCharVec.txt");
     FileReader cfIn = new FileReader(charFile);
     BufferedReader bcfr = new BufferedReader(cfIn);
     LineNumberReader lnr = new LineNumberReader(bcfr);
@@ -60,7 +60,7 @@ public class OneHotNN {
 
   public void initialModel(int numInputs) throws Exception {
     int seed = 123;
-    File charFile = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\answer.txt");
+    File charFile = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\answer.txt");
     FileReader cfIn = new FileReader(charFile);
     BufferedReader bcfr = new BufferedReader(cfIn);
     LineNumberReader lnr = new LineNumberReader(bcfr);
@@ -77,12 +77,12 @@ public class OneHotNN {
     // Load the training data:
     RecordReader rr = new CSVRecordReader();
 //        rr.initialize(new FileSplit(new File("src/main/resources/classification/linear_data_train.csv")));
-    rr.initialize(new FileSplit(new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\w2v_tr.txt")));
+    rr.initialize(new FileSplit(new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\w2v_tr.txt")));
     DataSetIterator trainIter = new RecordReaderDataSetIterator(rr, batchSize, 0, numOutputs);
 
     // Load the test/evaluation data:
     RecordReader rrTest = new CSVRecordReader();
-    rrTest.initialize(new FileSplit(new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\w2v_test.txt")));
+    rrTest.initialize(new FileSplit(new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\w2v_test.txt")));
     DataSetIterator testIter = new RecordReaderDataSetIterator(rrTest, batchSize, 0, numOutputs);
 
     // build neural network
@@ -120,6 +120,6 @@ public class OneHotNN {
     //Print the evaluation statistics
     System.out.println(model.evaluate(testIter).stats());
     this.model = model;
-//    ModelSerializer.writeModel(model,new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model\\compusQA\\compusQA.bin"),false);
+//    ModelSerializer.writeModel(model,new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model\\compusQA\\compusQA.bin"),false);
   }
 }

@@ -11,13 +11,13 @@ public class Output_Sent2Vec {
   public static void main(String[] args) throws Exception {
     //请提前设置好 训练-问序.txt 文件
     outputCharVec();
-    File charFile = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\singleCharVec.txt");
-    File inFileTr = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\训练-问序.txt");
-    File outFileTr = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\w2v_tr.txt");
-    File inFileTe = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\测试-问序.txt");
-    File outFileTe = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\w2v_test.txt");
-    File inFileVa = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\验证-问序.txt");
-    File outFileVa = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\w2v_val.txt");
+    File charFile = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\singleCharVec.txt");
+    File inFileTr = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\训练-问序.txt");
+    File outFileTr = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\w2v_tr.txt");
+    File inFileTe = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\测试-问序.txt");
+    File outFileTe = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\w2v_test.txt");
+    File inFileVa = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\验证-问序.txt");
+    File outFileVa = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\w2v_val.txt");
     outputVec(charFile, inFileTr, outFileTr);
     outputVec(charFile, inFileTe, outFileTe);
     outputVec(charFile, inFileVa, outFileVa);
@@ -26,8 +26,8 @@ public class Output_Sent2Vec {
 
   private static void outputCharVec() throws Exception {
     HashSet<Character> set = new HashSet<Character>();
-    File file = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\训练-问序.txt");
-    File charFile = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\singleCharVec.txt");
+    File file = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\训练-问序.txt");
+    File charFile = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\singleCharVec.txt");
     FileReader fIn = new FileReader(file);
     BufferedReader bfr = new BufferedReader(fIn);
     FileWriter cfOut = new FileWriter(charFile);

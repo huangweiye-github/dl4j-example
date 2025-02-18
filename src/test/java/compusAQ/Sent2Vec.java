@@ -12,7 +12,7 @@ public class Sent2Vec {
   LinkedList<Character> list = new LinkedList<Character>();
 
   public void initialCharVec() throws Exception {
-    File inFile = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\singleCharVec.txt");
+    File inFile = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\singleCharVec.txt");
     FileReader fReader = new FileReader(inFile);
     BufferedReader bfr = new BufferedReader(fReader);
     String str;
@@ -25,7 +25,7 @@ public class Sent2Vec {
 
   public LinkedList<String> getAswList() throws Exception {
     LinkedList aswList = new LinkedList();
-    File inFile = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\answer.txt");
+    File inFile = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\answer.txt");
     FileReader fReader = new FileReader(inFile);
     BufferedReader bfr = new BufferedReader(fReader);
     String str;

@@ -25,7 +25,7 @@ public class CampusQA implements QA {
 
   public CampusQA() throws Exception {
 
-    File charFile = new File("D:\\idea-work\\Deeplearning4J\\src\\test\\resources\\model-data\\compusQA\\singleCharVec.txt");
+    File charFile = new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\compusQA\\singleCharVec.txt");
     FileReader cfIn = new FileReader(charFile);
     BufferedReader bcfr = new BufferedReader(cfIn);
     LineNumberReader lnr = new LineNumberReader(bcfr);
