@@ -226,7 +226,7 @@ Precision, recall & F1: reported for positive class (class 1 - "1") only
                 //只有两种分类
                 for (int i = 0; i < exitedCategoricalValue.length; i++) {
                     if (binaryGuesses.getInt(i) == 1){
-                        System.out.println("分类："+binaryGuesses.getInt(i));
+                        System.out.println("分类："+i);
                     }
                 }
             }catch (Exception exception){
