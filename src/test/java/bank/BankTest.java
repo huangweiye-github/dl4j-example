@@ -1,8 +1,11 @@
 package bank;
 
+import org.datavec.api.records.reader.impl.collection.CollectionRecordReader;
 import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
+import org.datavec.api.records.reader.impl.inmemory.InMemoryRecordReader;
 import org.datavec.api.records.reader.impl.transform.TransformProcessRecordReader;
 import org.datavec.api.split.FileSplit;
+import org.datavec.api.split.StringSplit;
 import org.datavec.api.transform.TransformProcess;
 import org.datavec.api.transform.analysis.DataAnalysis;
 import org.datavec.api.transform.schema.Schema;
@@ -11,6 +14,7 @@ import org.datavec.api.transform.ui.HtmlAnalysis;
 import org.datavec.local.transforms.AnalyzeLocal;
 import org.deeplearning4j.core.storage.StatsStorage;
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
+import org.deeplearning4j.nn.api.OptimizationAlgorithm;
 import org.deeplearning4j.nn.conf.MultiLayerConfiguration;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.inputs.InputType;
@@ -25,11 +29,18 @@ import org.deeplearning4j.ui.model.storage.InMemoryStatsStorage;
 import org.nd4j.evaluation.EvaluationAveraging;
 import org.nd4j.evaluation.classification.Evaluation;
 import org.nd4j.linalg.activations.Activation;
+import org.nd4j.linalg.api.buffer.DataType;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
 import org.nd4j.linalg.learning.config.Adam;
+import org.nd4j.linalg.learning.config.Nesterovs;
+import org.nd4j.linalg.lossfunctions.LossFunctions;
 import org.nd4j.linalg.lossfunctions.impl.LossMCXENT;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Random;
+import java.util.Scanner;
 
 /***
  * 预测银行客户是否流失
@@ -37,6 +48,10 @@ import java.util.Random;
 
 public class BankTest {
 
+    private static TransformProcess transformProcess;
+    private static MultiLayerNetwork model;
+    private static String[] exitedCategoricalValue = {"0", "1"};//结果分类
+    private static Schema finalSchema;
     public static void main(String[] args) throws Exception {
         Random random = new Random();
         random.setSeed(0xC0FFEE);
@@ -57,14 +72,14 @@ public class BankTest {
                 .addColumnCategorical("Has Credit Card", "0", "1")
                 .addColumnCategorical("Is Active Member", "0", "1")
                 .addColumnDouble("Estimated Salary")
-                .addColumnCategorical("Exited", "0", "1")
+                .addColumnCategorical("Exited", exitedCategoricalValue)
                 .build();
         DataAnalysis analysis = AnalyzeLocal.analyze(schema, recordReader);
         HtmlAnalysis.createHtmlAnalysisFile(analysis, new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model\\bank\\analysis.html"));
-        TransformProcess transformProcess = new TransformProcess.Builder(schema)
+        transformProcess = new TransformProcess.Builder(schema)
                 /**移除无意义的列*/
                 .removeColumns("Row Number", "Customer Id", "Surname")
-                /**单热列
+                /**单热列(独热)
                  * 当类别数据被简单地编码为整数时（例如，红色=1，蓝色=2，绿色=3），
                  * 模型可能会错误地学习到类别之间存在某种排序关系。
                  * 独热表示消除了这种潜在的误解
@@ -93,50 +108,133 @@ public class BankTest {
                 .normalize("Balance", Normalize.Log2MeanExcludingMin, analysis)
                 .normalize("Estimated Salary", Normalize.Log2MeanExcludingMin, analysis)
                 .build();
-        Schema finalSchema = transformProcess.getFinalSchema();
+        finalSchema = transformProcess.getFinalSchema();
 
-        int batchSize = 80;
+
         TransformProcessRecordReader trainRecordReader = new TransformProcessRecordReader(new CSVRecordReader(1), transformProcess);
         trainRecordReader.initialize(inputSplit);
-        RecordReaderDataSetIterator trainIterator = new RecordReaderDataSetIterator.Builder(trainRecordReader, batchSize)
+        RecordReaderDataSetIterator trainIterator = new RecordReaderDataSetIterator.Builder(trainRecordReader, 1000)
                 /**输出结果分类*/
                 .classification(finalSchema.getIndexOfColumn("Exited"), 2)
                 .build();
-        MultiLayerConfiguration config = new NeuralNetConfiguration.Builder()
-                .seed(0xC0FFEE)
-                .weightInit(WeightInit.XAVIER)
-                .activation(Activation.TANH)
-                .updater(new Adam.Builder().learningRate(0.001).build())
-                .l2(0.000316)
-                .list(
-                        new DenseLayer.Builder().nOut(25).build(),
-                        new DenseLayer.Builder().nOut(25).build(),
-                        new DenseLayer.Builder().nOut(25).build(),
-                        new DenseLayer.Builder().nOut(25).build(),
-                        new DenseLayer.Builder().nOut(25).build(),
-                        new OutputLayer.Builder(new LossMCXENT()).nOut(2).activation(Activation.SOFTMAX).build()
-                )
-                .setInputType(InputType.feedForward(finalSchema.numColumns() - 1))
-                .build();
-        MultiLayerNetwork model = new MultiLayerNetwork(config);
+        model = new MultiLayerNetwork(getMultiLayerConfiguration());
         model.init();
         UIServer uiServer = UIServer.getInstance();
         StatsStorage statsStorage = new InMemoryStatsStorage();
         uiServer.attach(statsStorage);
         model.addListeners(new StatsListener(statsStorage, 50));
         model.addListeners(new ScoreIterationListener(50));
-        model.fit(trainIterator, 60);
-
-
+        //训练
+        model.fit(trainIterator, 500);
+        //测试
         TransformProcessRecordReader testRecordReader = new TransformProcessRecordReader(new CSVRecordReader(1), transformProcess);
         testRecordReader.initialize( new FileSplit(new File("D:\\idea-work\\dl4j-example\\src\\test\\resources\\model-data\\bank\\测试")));
-        RecordReaderDataSetIterator testIterator = new RecordReaderDataSetIterator.Builder(testRecordReader, batchSize)
+        RecordReaderDataSetIterator testIterator = new RecordReaderDataSetIterator.Builder(testRecordReader, 1000)
                 .classification(finalSchema.getIndexOfColumn("Exited"), 2)
                 .build();
         Evaluation evaluate = model.evaluate(testIterator);
         System.out.println(evaluate.stats());
         System.out.println("MCC: "+evaluate.matthewsCorrelation(EvaluationAveraging.Macro));
+        //验证
+        valid("1,15634602,Hargrave,619,France,Female,42,2,0,1,1,1,101348.88,1");
+    }
+
+    private static MultiLayerConfiguration getMultiLayerConfiguration() {
+/*
+        ========================Evaluation Metrics========================
+         # of classes:    2
+        Accuracy:        0.8717
+        Precision:       0.7964
+        Recall:          0.4973
+        F1 Score:        0.6123
+        Precision, recall & F1: reported for positive class (class 1 - "1") only
+*/
+//
+//        MultiLayerConfiguration config = new NeuralNetConfiguration.Builder()
+//                .seed(0xC0FFEE)
+//                .weightInit(WeightInit.XAVIER)
+//                .activation(Activation.TANH)
+//                .updater(new Adam.Builder().learningRate(0.001).build())
+//                .l2(0.000316)
+//                .list(
+//                        new DenseLayer.Builder().nOut(25).build(),
+//                        new DenseLayer.Builder().nOut(25).build(),
+//                        new DenseLayer.Builder().nOut(25).build(),
+//                        new DenseLayer.Builder().nOut(25).build(),
+//                        new DenseLayer.Builder().nOut(25).build(),
+//                        new OutputLayer.Builder(new LossMCXENT()).nOut(2).activation(Activation.SOFTMAX).build()
+//                )
+//                .setInputType(InputType.feedForward(finalSchema.numColumns() - 1))
+//                .build();
+//        return config;
+
+/*
+========================Evaluation Metrics========================
+ # of classes:    2
+ Accuracy:        0.9195
+ Precision:       0.7588
+ Recall:          0.8866
+ F1 Score:        0.8177
+Precision, recall & F1: reported for positive class (class 1 - "1") only
+
+*/
+
+        double learningRate = 0.1;
+        // 获取结果集数量
+        int numOutputs = exitedCategoricalValue.length;
+        int numHiddenNodes = 240;
+        int numInputs = finalSchema.numColumns() - 1;
+        int seed = 123;
+        MultiLayerConfiguration config = new NeuralNetConfiguration.Builder().seed(seed)
+                .optimizationAlgo(OptimizationAlgorithm.STOCHASTIC_GRADIENT_DESCENT)
+                .weightInit(WeightInit.XAVIER)
+                .updater(new Nesterovs(learningRate, 0.9))
+                .activation(Activation.RELU)
+                .list()
+                .layer(0, new DenseLayer.Builder()
+                        .nIn(numInputs)
+                        .nOut(numHiddenNodes)
+                        .build())
+                .layer(1, new DenseLayer.Builder()
+                        .nIn(numHiddenNodes)
+                        .nOut(numHiddenNodes)
+                        .build())
+                .layer(2, new OutputLayer.Builder(LossFunctions.LossFunction.NEGATIVELOGLIKELIHOOD)
+                        .activation(Activation.SOFTMAX)
+                        .nIn(numHiddenNodes)
+                        .nOut(numOutputs)
+                        .build())
+                .build();
+        return config;
+    }
+
+    private static void valid(String validCvsRowData) throws IOException, InterruptedException {
+        Scanner input = new Scanner(System.in);
+        String text;
+        while (true) {
+            try {
+                validCvsRowData = input.nextLine();
+                TransformProcessRecordReader validRecordReader = new TransformProcessRecordReader(new CSVRecordReader(0), transformProcess);
+                /**如果用的是 CSVRecordReader ，则 StringSplit 中的数据要符合 CSVRecordReader 的格式*/
+                validRecordReader.initialize(new StringSplit(validCvsRowData));
+                RecordReaderDataSetIterator validIterator = new RecordReaderDataSetIterator.Builder(validRecordReader, 1000)
+                        .classification(finalSchema.getIndexOfColumn("Exited"), 2)
+                        .build();
+                INDArray predicted = model.output(validIterator, false);
+                System.out.println(predicted);
+                INDArray binaryGuesses = predicted.gt(0.5).castTo(DataType.FLOAT);
+                //只有两种分类
+                for (int i = 0; i < exitedCategoricalValue.length; i++) {
+                    if (binaryGuesses.getInt(i) == 1){
+                        System.out.println("分类："+binaryGuesses.getInt(i));
+                    }
+                }
+            }catch (Exception exception){
+                exception.printStackTrace();
+            }
+        }
 
     }
+
 
 }
